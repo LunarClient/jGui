@@ -1,7 +1,7 @@
 package de.johni0702.minecraft.gui.utils;
 
 //#if MC<=11302
-//$$ import net.minecraftforge.common.MinecraftForge;
+import net.minecraftforge.common.MinecraftForge;
 //#endif
 
 //#if MC<10809
@@ -25,7 +25,7 @@ public class EventRegistrations {
 
     public void register() {
         //#if MC<=11302
-        //$$ MinecraftForge.EVENT_BUS.register(this);
+        MinecraftForge.EVENT_BUS.register(this);
         //#endif
         //#if MC<10809
         //$$ FMLCommonHandler.instance().bus().register(this);
@@ -37,7 +37,7 @@ public class EventRegistrations {
 
     public void unregister() {
         //#if MC<=11302
-        //$$ MinecraftForge.EVENT_BUS.unregister(this);
+        MinecraftForge.EVENT_BUS.unregister(this);
         //#endif
         //#if MC<10809
         //$$ FMLCommonHandler.instance().bus().unregister(this);

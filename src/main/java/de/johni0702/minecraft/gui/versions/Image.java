@@ -1,6 +1,6 @@
 package de.johni0702.minecraft.gui.versions;
 
-import net.minecraft.client.texture.NativeImageBackedTexture;
+import net.minecraft.client.renderer.texture.DynamicTexture;
 import java.awt.image.BufferedImage;
 import java.io.ByteArrayInputStream;
 import java.io.ByteArrayOutputStream;
@@ -13,9 +13,9 @@ import java.nio.file.Path;
 import javax.imageio.ImageIO;
 
 //#if MC>=11400
-import net.minecraft.client.texture.NativeImage;
+//$$ import net.minecraft.client.renderer.texture.NativeImage;
 //#else
-//$$ import java.awt.Graphics2D;
+import java.awt.Graphics2D;
 //#endif
 
 /**
@@ -25,30 +25,30 @@ import net.minecraft.client.texture.NativeImage;
  */
 public class Image implements AutoCloseable {
     //#if MC>=11400
-    private NativeImage inner;
+    //$$ private NativeImage inner;
     //#else
-    //$$ private BufferedImage inner;
+    private BufferedImage inner;
     //#endif
 
     public Image(int width, int height) {
         this(
                 //#if MC>=11400
                 //#if FABRIC>=1
-                new NativeImage(NativeImage.Format.ABGR, width, height, true)
+                //$$ new NativeImage(NativeImage.Format.RGBA, width, height, true)
                 //#else
                 //$$ new NativeImage(NativeImage.PixelFormat.RGBA, width, height, true)
                 //#endif
                 //#else
-                //$$ new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
+                new BufferedImage(width, height, BufferedImage.TYPE_INT_ARGB)
                 //#endif
         );
     }
 
     public Image(
             //#if MC>=11400
-            NativeImage inner
+            //$$ NativeImage inner
             //#else
-            //$$ BufferedImage inner
+            BufferedImage inner
             //#endif
     ) {
         this.inner = inner;
@@ -56,28 +56,28 @@ public class Image implements AutoCloseable {
 
     public
     //#if MC>=11400
-    NativeImage
+    //$$ NativeImage
     //#else
-    //$$ BufferedImage
+    BufferedImage
     //#endif
     getInner() {
         return inner;
     }
 
     //#if MC>=11400
-    @Override
-    protected void finalize() throws Throwable {
-        // Great, now we're using a language with GC but still need to take care of memory management.. thanks MC
-        close();
-        super.finalize();
-    }
+    //$$ @Override
+    //$$ protected void finalize() throws Throwable {
+    //$$     // Great, now we're using a language with GC but still need to take care of memory management.. thanks MC
+    //$$     close();
+    //$$     super.finalize();
+    //$$ }
     //#endif
 
     @Override
     public void close() {
         if (inner != null) {
             //#if MC>=11400
-            inner.close();
+            //$$ inner.close();
             //#endif
 
             inner = null;
@@ -94,10 +94,10 @@ public class Image implements AutoCloseable {
 
     public void setRGBA(int x, int y, int r, int g, int b, int a) {
         //#if MC>=11400
-        // actually takes ABGR, not RGBA
-        inner.setPixelColor(x, y, ((a & 0xff) << 24) | ((b & 0xff) << 16) | ((g & 0xff) << 8) | (r & 0xff));
+        //$$ // actually takes ABGR, not RGBA
+        //$$ inner.setPixelRGBA(x, y, ((a & 0xff) << 24) | ((b & 0xff) << 16) | ((g & 0xff) << 8) | (r & 0xff));
         //#else
-        //$$ inner.setRGB(x, y, ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff));
+        inner.setRGB(x, y, ((a & 0xff) << 24) | ((r & 0xff) << 16) | ((g & 0xff) << 8) | (b & 0xff));
         //#endif
     }
 
@@ -107,48 +107,48 @@ public class Image implements AutoCloseable {
 
     public static Image read(InputStream in) throws IOException {
         //#if MC>=11400
-        return new Image(NativeImage.read(in));
+        //$$ return new Image(NativeImage.read(in));
         //#else
-        //$$ BufferedImage image = ImageIO.read(in);
-        //$$ if (image == null) {
-        //$$     throw new IOException("Cannot read image: ImageIO.read returned null");
-        //$$ }
-        //$$ return new Image(image);
+        BufferedImage image = ImageIO.read(in);
+        if (image == null) {
+            throw new IOException("Cannot read image: ImageIO.read returned null");
+        }
+        return new Image(image);
         //#endif
     }
 
     public void writePNG(File file) throws IOException {
         //#if MC>=11400
-        inner.writeFile(file);
+        //$$ inner.write(file);
         //#else
-        //$$ ImageIO.write(inner, "PNG", file);
+        ImageIO.write(inner, "PNG", file);
         //#endif
     }
 
     public void writePNG(OutputStream outputStream) throws IOException {
         //#if MC>=11400
-        Path tmp = Files.createTempFile("tmp", ".png");
-        try {
-            inner.writeFile(tmp);
-            Files.copy(tmp, outputStream);
-        } finally {
-            Files.delete(tmp);
-        }
+        //$$ Path tmp = Files.createTempFile("tmp", ".png");
+        //$$ try {
+        //$$     inner.write(tmp);
+        //$$     Files.copy(tmp, outputStream);
+        //$$ } finally {
+        //$$     Files.delete(tmp);
+        //$$ }
         //#else
-        //$$ ImageIO.write(inner, "PNG", outputStream);
+        ImageIO.write(inner, "PNG", outputStream);
         //#endif
     }
 
     public Image scaledSubRect(int x, int y, int width, int height, int scaledWidth, int scaledHeight) {
         //#if MC>=11400
-        NativeImage dst = new NativeImage(inner.getFormat(), scaledWidth, scaledHeight, false);
-        inner.resizeSubRectTo(x, y, width, height, dst);
+        //$$ NativeImage dst = new NativeImage(inner.getFormat(), scaledWidth, scaledHeight, false);
+        //$$ inner.resizeSubRectTo(x, y, width, height, dst);
         //#else
-        //$$ BufferedImage dst = new BufferedImage(scaledWidth, scaledHeight, inner.getType());
-        //$$ Graphics2D graphics = dst.createGraphics();
-        //$$ graphics.drawImage(inner, 0, 0, scaledWidth, scaledHeight,
-        //$$         x, y, x + width, y + height, null);
-        //$$ graphics.dispose();
+        BufferedImage dst = new BufferedImage(scaledWidth, scaledHeight, inner.getType());
+        Graphics2D graphics = dst.createGraphics();
+        graphics.drawImage(inner, 0, 0, scaledWidth, scaledHeight,
+                x, y, x + width, y + height, null);
+        graphics.dispose();
         //#endif
         return new Image(dst);
     }
@@ -156,20 +156,20 @@ public class Image implements AutoCloseable {
     @Deprecated // BufferedImage should not be used on 1.13+, see class docs
     public BufferedImage toBufferedImage() {
         //#if MC>=11400
-        // Not very efficient but certainly the easiest solution.
-        ByteArrayOutputStream out = new ByteArrayOutputStream();
-        try {
-            writePNG(out);
-            return ImageIO.read(new ByteArrayInputStream(out.toByteArray()));
-        } catch (IOException e) {
-            throw new RuntimeException(e);
-        }
+        //$$ // Not very efficient but certainly the easiest solution.
+        //$$ ByteArrayOutputStream out = new ByteArrayOutputStream();
+        //$$ try {
+        //$$     writePNG(out);
+        //$$     return ImageIO.read(new ByteArrayInputStream(out.toByteArray()));
+        //$$ } catch (IOException e) {
+        //$$     throw new RuntimeException(e);
+        //$$ }
         //#else
-        //$$ return inner;
+        return inner;
         //#endif
     }
 
-    public NativeImageBackedTexture toTexture() {
-        return new NativeImageBackedTexture(inner);
+    public DynamicTexture toTexture() {
+        return new DynamicTexture(inner);
     }
 }

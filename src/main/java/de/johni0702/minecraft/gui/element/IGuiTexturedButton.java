@@ -26,16 +26,16 @@ package de.johni0702.minecraft.gui.element;
 
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraft.util.Identifier;
+import net.minecraft.util.ResourceLocation;
 //#if MC>=10904
-import net.minecraft.sound.SoundEvent;
+//$$ import net.minecraft.util.SoundEvent;
 //#endif
 
 public interface IGuiTexturedButton<T extends IGuiTexturedButton<T>> extends IGuiClickable<T> {
-    Identifier getTexture();
+    ResourceLocation getTexture();
     ReadableDimension getTextureTotalSize();
-    T setTexture(Identifier resourceLocation, int size);
-    T setTexture(Identifier resourceLocation, int width, int height);
+    T setTexture(ResourceLocation resourceLocation, int size);
+    T setTexture(ResourceLocation resourceLocation, int width, int height);
 
     ReadableDimension getTextureSize();
     T setTextureSize(int size);
@@ -54,6 +54,6 @@ public interface IGuiTexturedButton<T extends IGuiTexturedButton<T>> extends IGu
     T setTexturePos(ReadablePoint normal, ReadablePoint hover, ReadablePoint disabled);
 
     //#if MC>=10904
-    T setSound(SoundEvent sound);
+    //$$ T setSound(SoundEvent sound);
     //#endif
 }

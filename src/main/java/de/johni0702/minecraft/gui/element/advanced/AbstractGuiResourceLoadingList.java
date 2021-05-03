@@ -46,7 +46,7 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 import de.johni0702.minecraft.gui.versions.MCVer;
-import net.minecraft.client.gui.screen.Screen;
+import net.minecraft.client.gui.GuiScreen;
 
 import java.util.ArrayList;
 import java.util.List;
@@ -56,9 +56,9 @@ import java.util.concurrent.ConcurrentLinkedQueue;
 import static de.johni0702.minecraft.gui.utils.Utils.DOUBLE_CLICK_INTERVAL;
 
 //#if MC>=11400
-import de.johni0702.minecraft.gui.versions.MCVer.Keyboard;
+//$$ import de.johni0702.minecraft.gui.versions.MCVer.Keyboard;
 //#else
-//$$ import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Keyboard;
 //#endif
 
 public abstract class AbstractGuiResourceLoadingList
@@ -189,7 +189,7 @@ public abstract class AbstractGuiResourceLoadingList
 
     @Override
     public boolean typeKey(ReadablePoint mousePosition, int keyCode, char keyChar, boolean ctrlDown, boolean shiftDown) {
-        if (Screen.hasControlDown() && keyCode == Keyboard.KEY_A) {
+        if (GuiScreen.isCtrlKeyDown() && keyCode == Keyboard.KEY_A) {
             List<Element> all = new ArrayList<>();
             for (GuiElement<?> child : getListPanel().getChildren()) {
                 if (child instanceof AbstractGuiResourceLoadingList.Element) {
@@ -253,7 +253,7 @@ public abstract class AbstractGuiResourceLoadingList
             getContainer().convertFor(this, point);
             if (point.getX() > 0 && point.getX() < getLastSize().getWidth()
                     && point.getY() > 0 && point.getY() < getLastSize().getHeight()) {
-                if (Screen.hasControlDown()) {
+                if (GuiScreen.isCtrlKeyDown()) {
                     if (selected.contains(this)) {
                         selected.remove(this);
                     } else {

@@ -26,32 +26,32 @@ package de.johni0702.minecraft.gui.utils;
 
 import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.versions.MCVer;
-import net.minecraft.client.MinecraftClient;
+import net.minecraft.client.Minecraft;
 
 //#if MC>=11400
-import net.minecraft.client.util.Window;
+//$$ import net.minecraft.client.MainWindow;
 //#else
-//$$ import net.minecraft.client.gui.ScaledResolution;
-//$$ import org.lwjgl.input.Mouse;
+import net.minecraft.client.gui.ScaledResolution;
+import org.lwjgl.input.Mouse;
 //#endif
 
 public class MouseUtils {
-    private static final MinecraftClient mc = MCVer.getMinecraft();
+    private static final Minecraft mc = MCVer.getMinecraft();
 
     public static Point getMousePos() {
         //#if MC>=11400
-        int mouseX = (int) mc.mouse.getX();
-        int mouseY = (int) mc.mouse.getY();
-        Window mainWindow = MCVer.newScaledResolution(mc);
-        mouseX = (int) Math.round((double) mouseX * mainWindow.getScaledWidth() / mainWindow.getWidth());
-        mouseY = (int) Math.round((double) mouseY * mainWindow.getScaledHeight() / mainWindow.getHeight());
+        //$$ int mouseX = (int) mc.mouseHelper.getMouseX();
+        //$$ int mouseY = (int) mc.mouseHelper.getMouseY();
+        //$$ MainWindow mainWindow = MCVer.newScaledResolution(mc);
+        //$$ mouseX = (int) Math.round((double) mouseX * mainWindow.getScaledWidth() / mainWindow.getWidth());
+        //$$ mouseY = (int) Math.round((double) mouseY * mainWindow.getScaledHeight() / mainWindow.getHeight());
         //#else
-        //$$ Point scaled = getScaledDimensions();
-        //$$ int width = scaled.getX();
-        //$$ int height = scaled.getY();
-        //$$
-        //$$ int mouseX = (Mouse.getX() * width / mc.displayWidth);
-        //$$ int mouseY = (height - Mouse.getY() * height / mc.displayHeight);
+        Point scaled = getScaledDimensions();
+        int width = scaled.getX();
+        int height = scaled.getY();
+
+        int mouseX = (Mouse.getX() * width / mc.displayWidth);
+        int mouseY = (height - Mouse.getY() * height / mc.displayHeight);
         //#endif
 
         return new Point(mouseX, mouseY);
@@ -59,9 +59,9 @@ public class MouseUtils {
 
     public static Point getScaledDimensions() {
         //#if MC>=11400
-        Window
+        //$$ MainWindow
         //#else
-        //$$ ScaledResolution
+        ScaledResolution
         //#endif
                 res = MCVer.newScaledResolution(mc);
         return new Point(res.getScaledWidth(), res.getScaledHeight());

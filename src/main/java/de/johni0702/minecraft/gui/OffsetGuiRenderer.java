@@ -29,8 +29,8 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.Identifier;
+import de.johni0702.minecraft.gui.versions.MatrixStack;
+import net.minecraft.util.ResourceLocation;
 import org.lwjgl.opengl.GL11;
 
 public class OffsetGuiRenderer implements GuiRenderer {
@@ -132,7 +132,7 @@ public class OffsetGuiRenderer implements GuiRenderer {
     }
 
     @Override
-    public void bindTexture(Identifier location) {
+    public void bindTexture(ResourceLocation location) {
         renderer.bindTexture(location);
     }
 

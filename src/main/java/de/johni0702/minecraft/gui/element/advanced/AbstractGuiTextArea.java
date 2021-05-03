@@ -40,15 +40,15 @@ import de.johni0702.minecraft.gui.utils.lwjgl.ReadableColor;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 import de.johni0702.minecraft.gui.versions.MCVer;
-import net.minecraft.client.font.TextRenderer;
-import net.minecraft.client.gui.screen.Screen;
-import net.minecraft.client.resource.language.I18n;
+import net.minecraft.client.gui.FontRenderer;
+import net.minecraft.client.gui.GuiScreen;
+import net.minecraft.client.resources.I18n;
 
 //#if MC>=11400
-import net.minecraft.SharedConstants;
+//$$ import net.minecraft.util.SharedConstants;
 //#else
-//$$ import net.minecraft.util.ChatAllowedCharacters;
-//$$ import org.lwjgl.input.Keyboard;
+import net.minecraft.util.ChatAllowedCharacters;
+import org.lwjgl.input.Keyboard;
 //#endif
 
 import java.util.Arrays;
@@ -198,14 +198,14 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
     private void updateCurrentOffset() {
         currentXOffset = Math.min(currentXOffset, cursorX);
         String line = text[cursorY].substring(currentXOffset, cursorX);
-        TextRenderer fontRenderer = MCVer.getFontRenderer();
-        int currentWidth = fontRenderer.getWidth(line);
+        FontRenderer fontRenderer = MCVer.getFontRenderer();
+        int currentWidth = fontRenderer.getStringWidth(line);
         if (currentWidth > size.getWidth() - BORDER * 2) {
-            currentXOffset = cursorX - fontRenderer.trimToWidth(line, size.getWidth() - BORDER * 2, true).length();
+            currentXOffset = cursorX - fontRenderer.trimStringToWidth(line, size.getWidth() - BORDER * 2, true).length();
         }
 
         currentYOffset = Math.min(currentYOffset, cursorY);
-        int lineHeight = MCVer.getFontRenderer().fontHeight + LINE_SPACING;
+        int lineHeight = MCVer.getFontRenderer().FONT_HEIGHT + LINE_SPACING;
         int contentHeight = size.getHeight() - BORDER * 2;
         int maxLines = contentHeight / lineHeight;
         if (cursorY - currentYOffset >= maxLines) {
@@ -230,9 +230,9 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
     @Override
     public void writeChar(char c) {
         //#if MC>=11400
-        if (!SharedConstants.isValidChar(c)) {
+        //$$ if (!SharedConstants.isAllowedCharacter(c)) {
         //#else
-        //$$ if (!ChatAllowedCharacters.isAllowedCharacter(c)) {
+        if (!ChatAllowedCharacters.isAllowedCharacter(c)) {
         //#endif
             return;
         }
@@ -382,13 +382,13 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
             updateCurrentOffset();
             int mouseX = position.getX() - BORDER;
             int mouseY = position.getY() - BORDER;
-            TextRenderer fontRenderer = MCVer.getFontRenderer();
-            int textY = clamp(mouseY / (fontRenderer.fontHeight + LINE_SPACING) + currentYOffset, 0, text.length - 1);
+            FontRenderer fontRenderer = MCVer.getFontRenderer();
+            int textY = clamp(mouseY / (fontRenderer.FONT_HEIGHT + LINE_SPACING) + currentYOffset, 0, text.length - 1);
             if (cursorY != textY) {
                 currentXOffset = 0;
             }
             String line = text[textY].substring(currentXOffset);
-            int textX = fontRenderer.trimToWidth(line, mouseX).length() + currentXOffset;
+            int textX = fontRenderer.trimStringToWidth(line, mouseX).length() + currentXOffset;
             setCursorPosition(textX, textY);
         }
 
@@ -431,7 +431,7 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
         updateCurrentOffset();
         super.draw(renderer, size, renderInfo);
 
-        TextRenderer fontRenderer = MCVer.getFontRenderer();
+        FontRenderer fontRenderer = MCVer.getFontRenderer();
         int width = size.getWidth();
         int height = size.getHeight();
 
@@ -441,7 +441,7 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
 
         ReadableColor textColor = isEnabled() ? textColorEnabled : textColorDisabled;
 
-        int lineHeight = fontRenderer.fontHeight + LINE_SPACING;
+        int lineHeight = fontRenderer.FONT_HEIGHT + LINE_SPACING;
         int contentHeight = height - BORDER * 2;
         int maxLines = contentHeight / lineHeight;
         int contentWidth = width - BORDER * 2;
@@ -449,7 +449,7 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
         // Draw hint if applicable
         if (hint != null && !isFocused() && Arrays.stream(text).allMatch(String::isEmpty)) {
             for (int i = 0; i < maxLines && i < hint.length; i++) {
-                String line = fontRenderer.trimToWidth(hint[i], contentWidth);
+                String line = fontRenderer.trimStringToWidth(hint[i], contentWidth);
 
                 int posY = BORDER + i * lineHeight;
                 renderer.drawString(BORDER, posY, textColorDisabled, line, true);
@@ -466,7 +466,7 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
                 line = line.substring(currentXOffset);
                 leftTrimmed = currentXOffset;
             }
-            line = fontRenderer.trimToWidth(line, contentWidth);
+            line = fontRenderer.trimStringToWidth(line, contentWidth);
 
             // Draw line
             int posY = BORDER + i * lineHeight;
@@ -482,26 +482,26 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
             } else if (lineY == fromY && lineY == toY) { // Part of line selected
                 String leftStr = line.substring(0, clamp(fromX - leftTrimmed, 0, line.length()));
                 String rightStr = line.substring(clamp(toX - leftTrimmed, 0, line.length()));
-                int left = BORDER + fontRenderer.getWidth(leftStr);
-                int right = lineEnd - fontRenderer.getWidth(rightStr) - 1;
+                int left = BORDER + fontRenderer.getStringWidth(leftStr);
+                int right = lineEnd - fontRenderer.getStringWidth(rightStr) - 1;
                 invertColors(renderer, right, posY - 1 + lineHeight, left, posY - 1);
             } else if (lineY == fromY) { // End of line selected
                 String rightStr = line.substring(clamp(fromX - leftTrimmed, 0, line.length()));
-                invertColors(renderer, lineEnd, posY - 1 + lineHeight, lineEnd - fontRenderer.getWidth(rightStr), posY - 1);
+                invertColors(renderer, lineEnd, posY - 1 + lineHeight, lineEnd - fontRenderer.getStringWidth(rightStr), posY - 1);
             } else if (lineY == toY) { // Beginning of line selected
                 String leftStr = line.substring(0, clamp(toX - leftTrimmed, 0, line.length()));
-                int right = BORDER + fontRenderer.getWidth(leftStr);
+                int right = BORDER + fontRenderer.getStringWidth(leftStr);
                 invertColors(renderer, right, posY - 1 + lineHeight, BORDER, posY - 1);
             }
 
             // Draw cursor
             if (lineY == cursorY && blinkCursorTick / 6 % 2 == 0 && focused) {
                 String beforeCursor = line.substring(0, cursorX - leftTrimmed);
-                int posX = BORDER + fontRenderer.getWidth(beforeCursor);
+                int posX = BORDER + fontRenderer.getStringWidth(beforeCursor);
                 if (cursorX == text[lineY].length()) {
                     renderer.drawString(posX, posY, CURSOR_COLOR, "_", true);
                 } else {
-                    renderer.drawRect(posX, posY - 1, 1, 1 + fontRenderer.fontHeight, CURSOR_COLOR);
+                    renderer.drawRect(posX, posY - 1, 1, 1 + fontRenderer.FONT_HEIGHT, CURSOR_COLOR);
                 }
             }
         }
@@ -522,7 +522,7 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
             return false;
         }
 
-        if (Screen.hasControlDown()) {
+        if (GuiScreen.isCtrlKeyDown()) {
             switch (keyCode) {
                 case Keyboard.KEY_A: // Select all
                     cursorX = cursorY = 0;
@@ -545,8 +545,8 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
             }
         }
 
-        boolean words = Screen.hasControlDown();
-        boolean select = Screen.hasShiftDown();
+        boolean words = GuiScreen.isCtrlKeyDown();
+        boolean select = GuiScreen.isShiftKeyDown();
         switch (keyCode) {
             case Keyboard.KEY_HOME:
                 cursorX = 0;
@@ -696,7 +696,7 @@ public abstract class AbstractGuiTextArea<T extends AbstractGuiTextArea<T>>
 
     @Override
     public T setI18nHint(String hint, Object... args) {
-        setHint(I18n.translate(hint, args).split("/n"));
+        setHint(I18n.format(hint, args).split("/n"));
         return getThis();
     }
 

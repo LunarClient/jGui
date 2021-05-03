@@ -37,23 +37,23 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 import de.johni0702.minecraft.gui.versions.MCVer;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.crash.CrashReport;
-import net.minecraft.util.crash.CrashReportSection;
-import net.minecraft.util.crash.CrashException;
+import de.johni0702.minecraft.gui.versions.MatrixStack;
+import net.minecraft.crash.CrashReport;
+import net.minecraft.crash.CrashReportCategory;
+import net.minecraft.util.ReportedException;
 
 //#if MC>=11400
-import de.johni0702.minecraft.gui.versions.MCVer.Keyboard;
+//$$ import de.johni0702.minecraft.gui.versions.MCVer.Keyboard;
 //#else
-//$$ import org.lwjgl.input.Keyboard;
-//$$ import org.lwjgl.input.Mouse;
+import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Mouse;
 //#endif
 
 //#if MC>=10800
-import com.mojang.blaze3d.platform.GlStateManager;
+import net.minecraft.client.renderer.GlStateManager;
 
 //#if MC<11400
-//$$ import java.io.IOException;
+import java.io.IOException;
 //#endif
 //#endif
 
@@ -71,7 +71,7 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
 
     protected boolean suppressVanillaKeys;
 
-    public net.minecraft.client.gui.screen.Screen toMinecraft() {
+    public net.minecraft.client.gui.GuiScreen toMinecraft() {
         return wrapped;
     }
 
@@ -102,9 +102,9 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
                     break;
                 case DEFAULT:
                     //#if MC>=11600
-                    wrapped.renderBackground(renderer.getMatrixStack());
+                    //$$ wrapped.renderBackground(renderer.getMatrixStack());
                     //#else
-                    //$$ wrapped.renderBackground();
+                    wrapped.drawDefaultBackground();
                     //#endif
                     break;
                 case TRANSPARENT:
@@ -113,9 +113,9 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
                     break;
                 case DIRT:
                     //#if MC>=11600
-                    wrapped.renderBackgroundTexture(0);
+                    //$$ wrapped.renderBackgroundTexture(0);
                     //#else
-                    //$$ wrapped.renderDirtBackground(0);
+                    wrapped.drawBackground(0);
                     //#endif
                     break;
             }
@@ -147,17 +147,17 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
                     OffsetGuiRenderer eRenderer = new OffsetGuiRenderer(renderer, position, tooltipSize);
                     tooltip.draw(eRenderer, tooltipSize, renderInfo);
                 } catch (Exception ex) {
-                    CrashReport crashReport = CrashReport.create(ex, "Rendering Gui Tooltip");
+                    CrashReport crashReport = CrashReport.makeCrashReport(ex, "Rendering Gui Tooltip");
                     renderInfo.addTo(crashReport);
-                    CrashReportSection category = crashReport.addElement("Gui container details");
+                    CrashReportCategory category = crashReport.makeCategory("Gui container details");
                     MCVer.addDetail(category, "Container", this::toString);
                     MCVer.addDetail(category, "Width", () -> "" + size.getWidth());
                     MCVer.addDetail(category, "Height", () -> "" + size.getHeight());
-                    category = crashReport.addElement("Tooltip details");
+                    category = crashReport.makeCategory("Tooltip details");
                     MCVer.addDetail(category, "Element", tooltip::toString);
                     MCVer.addDetail(category, "Position", position::toString);
                     MCVer.addDetail(category, "Size", tooltipSize::toString);
-                    throw new CrashException(crashReport);
+                    throw new ReportedException(crashReport);
                 }
             }
         }
@@ -181,7 +181,7 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
     }
 
     public void display() {
-        getMinecraft().openScreen(toMinecraft());
+        getMinecraft().displayGuiScreen(toMinecraft());
     }
 
     public Background getBackground() {
@@ -204,36 +204,36 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
         this.title = title;
     }
 
-    protected class MinecraftGuiScreen extends net.minecraft.client.gui.screen.Screen {
+    protected class MinecraftGuiScreen extends net.minecraft.client.gui.GuiScreen {
         private boolean active;
 
         //#if MC>=11400
-        protected MinecraftGuiScreen() {
-            super(null);
-        }
-
-        @Override
-        public String getNarrationMessage() {
-            return title == null ? "" : title.getString();
-        }
+        //$$ protected MinecraftGuiScreen() {
+        //$$     super(null);
+        //$$ }
+        //$$
+        //$$ @Override
+        //$$ public String getNarrationMessage() {
+        //$$     return title == null ? "" : title.getString();
+        //$$ }
         //#endif
 
         @Override
         //#if MC>=11600
-        public void render(MatrixStack stack, int mouseX, int mouseY, float partialTicks) {
+        //$$ public void render(MatrixStack stack, int mouseX, int mouseY, float partialTicks) {
         //#else
         //#if MC>=11400
         //$$ public void render(int mouseX, int mouseY, float partialTicks) {
         //#else
-        //$$ public void drawScreen(int mouseX, int mouseY, float partialTicks) {
+        public void drawScreen(int mouseX, int mouseY, float partialTicks) {
         //#endif
-        //$$     MatrixStack stack = new MatrixStack();
+            MatrixStack stack = new MatrixStack();
         //#endif
             // The Forge loading screen apparently leaves one of the textures of the GlStateManager in an
             // incorrect state which can cause the whole screen to just remain white. This is a workaround.
             //#if MC>=10800 && MC<11400
-            //$$ GlStateManager.disableTexture2D();
-            //$$ GlStateManager.enableTexture2D();
+            GlStateManager.disableTexture2D();
+            GlStateManager.enableTexture2D();
             //#endif
 
             int layers = getMaxLayer();
@@ -248,129 +248,129 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
         }
 
         //#if MC>=11400
-        @Override
-        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-            if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), keyCode, '\0', hasControlDown(), hasShiftDown())) {
-                if (suppressVanillaKeys) {
-                    return false;
-                }
-                return super.keyPressed(keyCode, scanCode, modifiers);
-            }
-            return true;
-        }
-
-        @Override
-        public boolean charTyped(char keyChar, int scanCode) {
-            if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), 0, keyChar, hasControlDown(), hasShiftDown())) {
-                if (suppressVanillaKeys) {
-                    return false;
-                }
-                return super.charTyped(keyChar, scanCode);
-            }
-            return true;
-        }
-        //#else
         //$$ @Override
-        //$$ protected void keyTyped(char typedChar, int keyCode)
-                //#if MC>=10800
-                //$$ throws IOException
-                //#endif
-        //$$ {
-        //$$     if (!forEach(Typeable.class).typeKey(
-        //$$             MouseUtils.getMousePos(), keyCode, typedChar, isCtrlKeyDown(), isShiftKeyDown())) {
+        //$$ public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        //$$     if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), keyCode, '\0', hasControlDown(), hasShiftDown())) {
         //$$         if (suppressVanillaKeys) {
-        //$$             return;
+        //$$             return false;
         //$$         }
-        //$$         super.keyTyped(typedChar, keyCode);
+        //$$         return super.keyPressed(keyCode, scanCode, modifiers);
         //$$     }
+        //$$     return true;
         //$$ }
+        //$$
+        //$$ @Override
+        //$$ public boolean charTyped(char keyChar, int scanCode) {
+        //$$     if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), 0, keyChar, hasControlDown(), hasShiftDown())) {
+        //$$         if (suppressVanillaKeys) {
+        //$$             return false;
+        //$$         }
+        //$$         return super.charTyped(keyChar, scanCode);
+        //$$     }
+        //$$     return true;
+        //$$ }
+        //#else
+        @Override
+        protected void keyTyped(char typedChar, int keyCode)
+                //#if MC>=10800
+                throws IOException
+                //#endif
+        {
+            if (!forEach(Typeable.class).typeKey(
+                    MouseUtils.getMousePos(), keyCode, typedChar, isCtrlKeyDown(), isShiftKeyDown())) {
+                if (suppressVanillaKeys) {
+                    return;
+                }
+                super.keyTyped(typedChar, keyCode);
+            }
+        }
         //#endif
 
         @Override
         //#if MC>=11400
-        public boolean mouseClicked(double mouseXD, double mouseYD, int mouseButton) {
-            int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
-            return
+        //$$ public boolean mouseClicked(double mouseXD, double mouseYD, int mouseButton) {
+        //$$     int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
+        //$$     return
         //#else
-        //$$ protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
+        protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
                 //#if MC>=10800
-                //$$ throws IOException
+                throws IOException
                 //#endif
-        //$$ {
+        {
         //#endif
             forEach(Clickable.class).mouseClick(new Point(mouseX, mouseY), mouseButton);
         }
 
         @Override
         //#if MC>=11400
-        public boolean mouseReleased(double mouseXD, double mouseYD, int mouseButton) {
-            int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
-            return
+        //$$ public boolean mouseReleased(double mouseXD, double mouseYD, int mouseButton) {
+        //$$     int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
+        //$$     return
         //#else
-        //$$ protected void mouseReleased(int mouseX, int mouseY, int mouseButton) {
+        protected void mouseReleased(int mouseX, int mouseY, int mouseButton) {
         //#endif
             forEach(Draggable.class).mouseRelease(new Point(mouseX, mouseY), mouseButton);
         }
 
         @Override
         //#if MC>=11400
-        public boolean mouseDragged(double mouseXD, double mouseYD, int mouseButton, double deltaX, double deltaY) {
-            int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
-            long timeSinceLastClick = 0;
-            return
+        //$$ public boolean mouseDragged(double mouseXD, double mouseYD, int mouseButton, double deltaX, double deltaY) {
+        //$$     int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
+        //$$     long timeSinceLastClick = 0;
+        //$$     return
         //#else
-        //$$ protected void mouseClickMove(int mouseX, int mouseY, int mouseButton, long timeSinceLastClick) {
+        protected void mouseClickMove(int mouseX, int mouseY, int mouseButton, long timeSinceLastClick) {
         //#endif
             forEach(Draggable.class).mouseDrag(new Point(mouseX, mouseY), mouseButton, timeSinceLastClick);
         }
 
         @Override
         //#if MC>=11400
-        public void tick() {
+        //$$ public void tick() {
         //#else
-        //$$ public void updateScreen() {
+        public void updateScreen() {
         //#endif
             forEach(Tickable.class).tick();
         }
 
         //#if MC>=11400
-        @Override
-        public boolean mouseScrolled(
+        //$$ @Override
+        //$$ public boolean mouseScrolled(
                 //#if MC>=11400
-                double mouseX,
-                double mouseY,
+                //$$ double mouseX,
+                //$$ double mouseY,
                 //#endif
-                double dWheel
-        ) {
-            dWheel *= 120;
-            return forEach(Scrollable.class).scroll(
+        //$$         double dWheel
+        //$$ ) {
+        //$$     dWheel *= 120;
+        //$$     return forEach(Scrollable.class).scroll(
                     //#if MC>=11400
-                    new Point((int) mouseX, (int) mouseY),
+                    //$$ new Point((int) mouseX, (int) mouseY),
                     //#else
                     //$$ MouseUtils.getMousePos(),
                     //#endif
-                    (int) dWheel
-            );
-        }
-        //#else
-        //$$ @Override
-        //$$ public void handleMouseInput()
-                //#if MC>=10800
-                //$$ throws IOException
-                //#endif
-        //$$ {
-        //$$     super.handleMouseInput();
-        //$$     if (Mouse.hasWheel() && Mouse.getEventDWheel() != 0) {
-        //$$         forEach(Scrollable.class).scroll(MouseUtils.getMousePos(), Mouse.getEventDWheel());
-        //$$     }
+        //$$             (int) dWheel
+        //$$     );
         //$$ }
+        //#else
+        @Override
+        public void handleMouseInput()
+                //#if MC>=10800
+                throws IOException
+                //#endif
+        {
+            super.handleMouseInput();
+            if (Mouse.hasWheel() && Mouse.getEventDWheel() != 0) {
+                forEach(Scrollable.class).scroll(MouseUtils.getMousePos(), Mouse.getEventDWheel());
+            }
+        }
         //#endif
 
         @Override
         //#if MC>=11400
-        public void removed() {
+        //$$ public void removed() {
         //#else
-        //$$ public void onGuiClosed() {
+        public void onGuiClosed() {
         //#endif
             forEach(Closeable.class).close();
             active = false;
@@ -381,9 +381,9 @@ public abstract class AbstractGuiScreen<T extends AbstractGuiScreen<T>> extends 
 
         @Override
         //#if MC>=11400
-        public void init() {
+        //$$ public void init() {
         //#else
-        //$$ public void initGui() {
+        public void initGui() {
         //#endif
             active = false;
             if (enabledRepeatedKeyEvents) {

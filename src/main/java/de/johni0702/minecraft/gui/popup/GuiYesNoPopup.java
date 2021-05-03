@@ -38,9 +38,9 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Dimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 
 //#if MC>=11400
-import de.johni0702.minecraft.gui.versions.MCVer.Keyboard;
+//$$ import de.johni0702.minecraft.gui.versions.MCVer.Keyboard;
 //#else
-//$$ import org.lwjgl.input.Keyboard;
+import org.lwjgl.input.Keyboard;
 //#endif
 
 public class GuiYesNoPopup extends AbstractGuiPopup<GuiYesNoPopup> implements Typeable {

@@ -37,37 +37,37 @@ import de.johni0702.minecraft.gui.utils.lwjgl.Point;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadableDimension;
 import de.johni0702.minecraft.gui.utils.lwjgl.ReadablePoint;
 import de.johni0702.minecraft.gui.versions.MCVer;
-import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.util.math.MatrixStack;
-import net.minecraft.util.crash.CrashReport;
-import net.minecraft.util.crash.CrashReportSection;
-import net.minecraft.util.crash.CrashException;
+import net.minecraft.client.Minecraft;
+import de.johni0702.minecraft.gui.versions.MatrixStack;
+import net.minecraft.crash.CrashReport;
+import net.minecraft.crash.CrashReportCategory;
+import net.minecraft.util.ReportedException;
 
 //#if MC>=11400
-import de.johni0702.minecraft.gui.versions.callbacks.PreTickCallback;
-import net.minecraft.text.LiteralText;
+//$$ import de.johni0702.minecraft.gui.versions.callbacks.PreTickCallback;
+//$$ import net.minecraft.util.text.StringTextComponent;
 //#endif
 
 //#if MC>=11400
-import net.minecraft.client.util.Window;
+//$$ import net.minecraft.client.MainWindow;
 //#else
-//$$ import org.lwjgl.input.Mouse;
-//$$ import net.minecraft.client.gui.ScaledResolution;
+import org.lwjgl.input.Mouse;
+import net.minecraft.client.gui.ScaledResolution;
 //#endif
 
 //#if FABRIC>=1
-import de.johni0702.minecraft.gui.versions.callbacks.RenderHudCallback;
+//$$ import de.johni0702.minecraft.gui.versions.callbacks.RenderHudCallback;
 //#else
-//$$ import net.minecraftforge.client.event.RenderGameOverlayEvent;
+import net.minecraftforge.client.event.RenderGameOverlayEvent;
 //#if MC>=10800
 //#if MC>=11400
 //$$ import net.minecraftforge.eventbus.api.SubscribeEvent;
 //#else
-//$$ import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
+import net.minecraftforge.fml.common.eventhandler.SubscribeEvent;
 //#endif
 //#if MC>=11400
 //#else
-//$$ import net.minecraftforge.fml.common.gameevent.TickEvent;
+import net.minecraftforge.fml.common.gameevent.TickEvent;
 //#endif
 //#else
 //$$ import cpw.mods.fml.common.eventhandler.SubscribeEvent;
@@ -76,7 +76,7 @@ import de.johni0702.minecraft.gui.versions.callbacks.RenderHudCallback;
 //#endif
 
 //#if MC>=10800 && MC<11400
-//$$ import java.io.IOException;
+import java.io.IOException;
 //#endif
 
 public abstract class AbstractGuiOverlay<T extends AbstractGuiOverlay<T>> extends AbstractGuiContainer<T> {
@@ -127,7 +127,7 @@ public abstract class AbstractGuiOverlay<T extends AbstractGuiOverlay<T>> extend
      * @see #setAllowUserInput(boolean)
      */
     public boolean isAllowUserInput() {
-        return userInputGuiScreen.passEvents;
+        return userInputGuiScreen.allowUserInput;
     }
 
     /**
@@ -136,22 +136,22 @@ public abstract class AbstractGuiOverlay<T extends AbstractGuiOverlay<T>> extend
      * GUI elements such as text fields.
      * Default for overlays is {@code true} whereas for normal GUI screens it is {@code false}.
      * @param allowUserInput {@code true} to allow user input, {@code false} to disallow it
-     * @see net.minecraft.client.gui.screen.Screen#passEvents
+     * @see net.minecraft.client.gui.GuiScreen#passEvents
      */
     public void setAllowUserInput(boolean allowUserInput) {
-        userInputGuiScreen.passEvents = allowUserInput;
+        userInputGuiScreen.allowUserInput = allowUserInput;
     }
 
     private void updateUserInputGui() {
-        MinecraftClient mc = getMinecraft();
+        Minecraft mc = getMinecraft();
         if (visible) {
             if (mouseVisible) {
                 if (mc.currentScreen == null) {
-                    mc.openScreen(userInputGuiScreen);
+                    mc.displayGuiScreen(userInputGuiScreen);
                 }
             } else {
                 if (mc.currentScreen == userInputGuiScreen) {
-                    mc.openScreen(null);
+                    mc.displayGuiScreen(null);
                 }
             }
         }
@@ -194,17 +194,17 @@ public abstract class AbstractGuiOverlay<T extends AbstractGuiOverlay<T>> extend
                     OffsetGuiRenderer eRenderer = new OffsetGuiRenderer(renderer, position, tooltipSize);
                     tooltip.draw(eRenderer, tooltipSize, renderInfo);
                 } catch (Exception ex) {
-                    CrashReport crashReport = CrashReport.create(ex, "Rendering Gui Tooltip");
+                    CrashReport crashReport = CrashReport.makeCrashReport(ex, "Rendering Gui Tooltip");
                     renderInfo.addTo(crashReport);
-                    CrashReportSection category = crashReport.addElement("Gui container details");
+                    CrashReportCategory category = crashReport.makeCategory("Gui container details");
                     MCVer.addDetail(category, "Container", this::toString);
                     MCVer.addDetail(category, "Width", () -> "" + size.getWidth());
                     MCVer.addDetail(category, "Height", () -> "" + size.getHeight());
-                    category = crashReport.addElement("Tooltip details");
+                    category = crashReport.makeCategory("Tooltip details");
                     MCVer.addDetail(category, "Element", tooltip::toString);
                     MCVer.addDetail(category, "Position", position::toString);
                     MCVer.addDetail(category, "Size", tooltipSize::toString);
-                    throw new CrashException(crashReport);
+                    throw new ReportedException(crashReport);
                 }
             }
         }
@@ -229,13 +229,13 @@ public abstract class AbstractGuiOverlay<T extends AbstractGuiOverlay<T>> extend
         private EventHandler() {}
 
         //#if FABRIC>=1
-        { on(RenderHudCallback.EVENT, this::renderOverlay); }
-        private void renderOverlay(MatrixStack stack, float partialTicks) {
+        //$$ { on(RenderHudCallback.EVENT, this::renderOverlay); }
+        //$$ private void renderOverlay(MatrixStack stack, float partialTicks) {
         //#else
-        //$$ @SubscribeEvent(receiveCanceled = true)
-        //$$ public void renderOverlay(RenderGameOverlayEvent.Text event) {
-        //$$     MatrixStack stack = new MatrixStack();
-        //$$     float partialTicks = MCVer.getPartialTicks(event);
+        @SubscribeEvent(receiveCanceled = true)
+        public void renderOverlay(RenderGameOverlayEvent.Text event) {
+            MatrixStack stack = new MatrixStack();
+            float partialTicks = MCVer.getPartialTicks(event);
         //#endif
             updateUserInputGui();
             updateRenderer();
@@ -257,22 +257,22 @@ public abstract class AbstractGuiOverlay<T extends AbstractGuiOverlay<T>> extend
         }
 
         //#if MC>=11400
-        { on(PreTickCallback.EVENT, () -> forEach(Tickable.class).tick()); }
+        //$$ { on(PreTickCallback.EVENT, () -> forEach(Tickable.class).tick()); }
         //#else
-        //$$ @SubscribeEvent
-        //$$ public void tickOverlay(TickEvent.ClientTickEvent event) {
-        //$$     if (event.phase == TickEvent.Phase.START) {
-        //$$         forEach(Tickable.class).tick();
-        //$$     }
-        //$$ }
+        @SubscribeEvent
+        public void tickOverlay(TickEvent.ClientTickEvent event) {
+            if (event.phase == TickEvent.Phase.START) {
+                forEach(Tickable.class).tick();
+            }
+        }
         //#endif
 
         private void updateRenderer() {
-            MinecraftClient mc = getMinecraft();
+            Minecraft mc = getMinecraft();
             //#if MC>=11400
-            Window
+            //$$ MainWindow
             //#else
-            //$$ ScaledResolution
+            ScaledResolution
             //#endif
                     res = MCVer.newScaledResolution(mc);
             if (screenSize == null
@@ -283,142 +283,142 @@ public abstract class AbstractGuiOverlay<T extends AbstractGuiOverlay<T>> extend
         }
     }
 
-    protected class UserInputGuiScreen extends net.minecraft.client.gui.screen.Screen {
+    protected class UserInputGuiScreen extends net.minecraft.client.gui.GuiScreen {
 
         //#if MC>=11400
-        UserInputGuiScreen() {
-            super(new LiteralText(""));
-        }
-        //#endif
-
-        {
-            this.passEvents = true;
-        }
-
-        //#if MC>=11400
-        @Override
-        public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
-            if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), keyCode, '\0', hasControlDown(), hasShiftDown())) {
-                return super.keyPressed(keyCode, scanCode, modifiers);
-            }
-            return true;
-        }
-
-        @Override
-        public boolean charTyped(char keyChar, int modifiers) {
-            if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), 0, keyChar, hasControlDown(), hasShiftDown())) {
-                return super.charTyped(keyChar, modifiers);
-            }
-            return true;
-        }
-        //#else
-        //$$ @Override
-        //$$ protected void keyTyped(char typedChar, int keyCode)
-                //#if MC>=10800
-                //$$ throws IOException
-                //#endif
-        //$$ {
-        //$$     forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), keyCode, typedChar, isCtrlKeyDown(), isShiftKeyDown());
-        //$$     if (closeable) {
-        //$$         super.keyTyped(typedChar, keyCode);
-        //$$     }
+        //$$ UserInputGuiScreen() {
+        //$$     super(new StringTextComponent(""));
         //$$ }
         //#endif
 
+        {
+            this.allowUserInput = true;
+        }
+
+        //#if MC>=11400
+        //$$ @Override
+        //$$ public boolean keyPressed(int keyCode, int scanCode, int modifiers) {
+        //$$     if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), keyCode, '\0', hasControlDown(), hasShiftDown())) {
+        //$$         return super.keyPressed(keyCode, scanCode, modifiers);
+        //$$     }
+        //$$     return true;
+        //$$ }
+        //$$
+        //$$ @Override
+        //$$ public boolean charTyped(char keyChar, int modifiers) {
+        //$$     if (!forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), 0, keyChar, hasControlDown(), hasShiftDown())) {
+        //$$         return super.charTyped(keyChar, modifiers);
+        //$$     }
+        //$$     return true;
+        //$$ }
+        //#else
+        @Override
+        protected void keyTyped(char typedChar, int keyCode)
+                //#if MC>=10800
+                throws IOException
+                //#endif
+        {
+            forEach(Typeable.class).typeKey(MouseUtils.getMousePos(), keyCode, typedChar, isCtrlKeyDown(), isShiftKeyDown());
+            if (closeable) {
+                super.keyTyped(typedChar, keyCode);
+            }
+        }
+        //#endif
+
         @Override
         //#if MC>=11400
-        public boolean mouseClicked(double mouseXD, double mouseYD, int mouseButton) {
-            int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
-            return
+        //$$ public boolean mouseClicked(double mouseXD, double mouseYD, int mouseButton) {
+        //$$     int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
+        //$$     return
         //#else
-        //$$ protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
+        protected void mouseClicked(int mouseX, int mouseY, int mouseButton)
                 //#if MC>=10800
-                //$$ throws IOException
+                throws IOException
                 //#endif
-        //$$ {
+        {
         //#endif
             forEach(Clickable.class).mouseClick(new Point(mouseX, mouseY), mouseButton);
         }
 
         @Override
         //#if MC>=11400
-        public boolean mouseReleased(double mouseXD, double mouseYD, int mouseButton) {
-            int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
-            return
+        //$$ public boolean mouseReleased(double mouseXD, double mouseYD, int mouseButton) {
+        //$$     int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
+        //$$     return
         //#else
-        //$$ protected void mouseReleased(int mouseX, int mouseY, int mouseButton) {
+        protected void mouseReleased(int mouseX, int mouseY, int mouseButton) {
         //#endif
             forEach(Draggable.class).mouseRelease(new Point(mouseX, mouseY), mouseButton);
         }
 
         @Override
         //#if MC>=11400
-        public boolean mouseDragged(double mouseXD, double mouseYD, int mouseButton, double deltaX, double deltaY) {
-            int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
-            long timeSinceLastClick = 0;
-            return
+        //$$ public boolean mouseDragged(double mouseXD, double mouseYD, int mouseButton, double deltaX, double deltaY) {
+        //$$     int mouseX = (int) Math.round(mouseXD), mouseY = (int) Math.round(mouseYD);
+        //$$     long timeSinceLastClick = 0;
+        //$$     return
         //#else
-        //$$ protected void mouseClickMove(int mouseX, int mouseY, int mouseButton, long timeSinceLastClick) {
+        protected void mouseClickMove(int mouseX, int mouseY, int mouseButton, long timeSinceLastClick) {
         //#endif
             forEach(Draggable.class).mouseDrag(new Point(mouseX, mouseY), mouseButton, timeSinceLastClick);
         }
 
         @Override
         //#if MC>=11400
-        public void tick() {
+        //$$ public void tick() {
         //#else
-        //$$ public void updateScreen() {
+        public void updateScreen() {
         //#endif
             forEach(Tickable.class).tick();
         }
 
         //#if MC>=11400
-        @Override
-        public boolean mouseScrolled(
+        //$$ @Override
+        //$$ public boolean mouseScrolled(
                 //#if MC>=11400
-                double mouseX,
-                double mouseY,
+                //$$ double mouseX,
+                //$$ double mouseY,
                 //#endif
-                double dWheel
-        ) {
-            dWheel *= 120;
-            return forEach(Scrollable.class).scroll(
+        //$$         double dWheel
+        //$$ ) {
+        //$$     dWheel *= 120;
+        //$$     return forEach(Scrollable.class).scroll(
                     //#if MC>=11400
-                    new Point((int) mouseX, (int) mouseY),
+                    //$$ new Point((int) mouseX, (int) mouseY),
                     //#else
                     //$$ MouseUtils.getMousePos(),
                     //#endif
-                    (int) dWheel
-            );
-        }
-        //#else
-        //$$ @Override
-        //$$ public void handleMouseInput()
-                //#if MC>=10800
-                //$$ throws IOException
-                //#endif
-        //$$ {
-        //$$     super.handleMouseInput();
-        //$$     if (Mouse.hasWheel() && Mouse.getEventDWheel() != 0) {
-        //$$         forEach(Scrollable.class).scroll(MouseUtils.getMousePos(), Mouse.getEventDWheel());
-        //$$     }
+        //$$             (int) dWheel
+        //$$     );
         //$$ }
-        //#endif
-
-        //#if MC>=11400
+        //#else
         @Override
-        public void onClose() {
-            if (closeable) {
-                super.onClose();
+        public void handleMouseInput()
+                //#if MC>=10800
+                throws IOException
+                //#endif
+        {
+            super.handleMouseInput();
+            if (Mouse.hasWheel() && Mouse.getEventDWheel() != 0) {
+                forEach(Scrollable.class).scroll(MouseUtils.getMousePos(), Mouse.getEventDWheel());
             }
         }
         //#endif
 
+        //#if MC>=11400
+        //$$ @Override
+        //$$ public void onClose() {
+        //$$     if (closeable) {
+        //$$         super.onClose();
+        //$$     }
+        //$$ }
+        //#endif
+
         @Override
         //#if MC>=11400
-        public void removed() {
+        //$$ public void removed() {
         //#else
-        //$$ public void onGuiClosed() {
+        public void onGuiClosed() {
         //#endif
             if (closeable) {
                 mouseVisible = false;
